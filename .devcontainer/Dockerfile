@@ -1,19 +1,14 @@
-FROM drogonframework/drogon
+FROM drogonframework/drogon:latest
 
-RUN apt-get update && \
-    apt-get install -y \
-    clang \
-    ladspa-sdk \
-    freeglut3-dev \
-    g++ \
-    libasound2-dev \
-    libcurl4-openssl-dev \
-    libfreetype6-dev \
-    libjack-jackd2-dev \
-    libx11-dev \
-    libxcomposite-dev \
-    mesa-common-dev \
-    libmariadbclient-dev \
-    webkit2gtk-4.0
-
-WORKDIR /app
+RUN apt-get update -y \
+  && apt-get install -y \
+  ccache \
+  curl \
+  tar \
+  jq \
+  ninja-build \
+  libsqlite3-dev \
+  clang \
+  libfmt-dev \
+  && apt-get purge --auto-remove cmake \
+  && apt-get upgrade -y
