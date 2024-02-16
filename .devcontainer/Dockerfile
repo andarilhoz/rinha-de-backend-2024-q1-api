@@ -1,17 +1,19 @@
 FROM drogonframework/drogon
 
-# [Optional] Uncomment this section to install additional vcpkg ports.
-# RUN su vscode -c "${VCPKG_ROOT}/vcpkg install <your-port-name-here>"
+RUN apt-get update && \
+    apt-get install -y \
+    clang \
+    ladspa-sdk \
+    freeglut3-dev \
+    g++ \
+    libasound2-dev \
+    libcurl4-openssl-dev \
+    libfreetype6-dev \
+    libjack-jackd2-dev \
+    libx11-dev \
+    libxcomposite-dev \
+    mesa-common-dev \
+    libmariadbclient-dev \
+    webkit2gtk-4.0
 
-# [Optional] Uncomment this section to install additional packages.
- RUN apt-get update && \
-     apt-get -y install --no-install-recommends \
-     git \
-     gcc \
-     g++ \
-     cmake \
-     libjsoncpp-dev \
-     uuid-dev \
-     zlib1g-dev \
-     libhiredis-dev \
-     libmariadbclient-dev
+WORKDIR /app
