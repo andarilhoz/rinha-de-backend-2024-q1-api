@@ -6,11 +6,6 @@
 		"dockerfile": "Dockerfile"
 	},
 
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {
-    //     "ghcr.io/devcontainers/features/desktop-lite:1": {}
-    // },
-
 	// Configure tool-specific properties.
 	"customizations": {
 		// Configure properties specific to VS Code.
@@ -19,6 +14,17 @@
 			"extensions": [
 				"streetsidesoftware.code-spell-checker"
 			]
+		}
+	},
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		//"ghcr.io/devcontainers/features/desktop-lite:1": {}
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"moby": true,
+			"azureDnsAutoDetection": true,
+			"installDockerBuildx": true,
+			"version": "latest",
+			"dockerDashComposeVersion": "none"
 		}
 	}
 
