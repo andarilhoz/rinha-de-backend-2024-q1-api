@@ -13,34 +13,35 @@ void UsersController::getOne(const HttpRequestPtr &req,
                              std::function<void(const HttpResponsePtr &)> &&callback,
                              std::string &&id)
 {
-    auto offset = req->getOptionalParameter<int>("offset").value_or(0);
-    auto limit = req->getOptionalParameter<int>("limit").value_or(25);
-    auto sortField = req->getOptionalParameter<std::string>("sort_field").value_or("id");
-    auto sortOrder = req->getOptionalParameter<std::string>("sort_order").value_or("asc");
-    auto sortOrderEnum = sortOrder == "asc" ? SortOrder::ASC : SortOrder::DESC;
-
     auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-    auto dbClientPtr = drogon::app().getDbClient("db");
+    auto dbClientPtr = drogon::app().getDbClient();
     
     if(!dbClientPtr){
         LOG_ERROR << "DB not initialized";
     }
+    
     Mapper<Transacoes> mapper(dbClientPtr);
 
-    mapper.orderBy(sortField, sortOrderEnum).offset(offset).limit(limit).findAll(
-        [callbackPtr](const std::vector<Transacoes> &transacao) {
-            Json::Value ret{};
-            for (auto t : transacao) {
-                ret.append(t.toJson());
-            }
-            auto resp = HttpResponse::newHttpJsonResponse(ret);
-            resp->setStatusCode(HttpStatusCode::k200OK);
+    auto criteria = Criteria(Transacoes::Cols::_cliente_id, CompareOperator::EQ, id);
+    mapper.findOne(criteria, 
+    [=](const Transacoes &transacao){
+        auto json = Json::Value();
+                    json["transacao"] = transacao.toJson();
+                    auto resp = HttpResponse::newHttpJsonResponse(json);
+                    (*callbackPtr)(resp);
+
+    },[callbackPtr](const DrogonDbException &e){
+        const drogon::orm::UnexpectedRows *s = dynamic_cast<const drogon::orm::UnexpectedRows *>(&e.base());
+        if(s) {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setStatusCode(k404NotFound);
             (*callbackPtr)(resp);
-        },
-        [callbackPtr](const DrogonDbException &e) {
-            LOG_ERROR << e.base().what();
-            auto resp = HttpResponse::newHttpJsonResponse("database error");
-            resp->setStatusCode(HttpStatusCode::k500InternalServerError);
-            (*callbackPtr)(resp);
-        });
+            return;
+        }
+
+        LOG_ERROR << e.base().what();
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(HttpStatusCode::k500InternalServerError);
+                (*callbackPtr)(resp);
+    });
 }

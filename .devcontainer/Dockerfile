@@ -7,7 +7,7 @@ FROM drogonframework/drogon
  RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
      && apt-get -y install --no-install-recommends git gcc g++ cmake\
      libjsoncpp-dev uuid-dev zlib1g-dev libhiredis-dev \
-     curl libyaml-cpp-dev && rm -rf /var/lib/apt/lists/*
+     curl libyaml-cpp-dev gdb && rm -rf /var/lib/apt/lists/*
 
 # Definir a versão do Docker Compose que você deseja instalar
 ARG DOCKER_COMPOSE_VERSION=1.29.2
