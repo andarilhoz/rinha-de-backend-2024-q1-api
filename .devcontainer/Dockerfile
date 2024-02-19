@@ -6,7 +6,7 @@ FROM drogonframework/drogon
 # [Optional] Uncomment this section to install additional packages.P
  RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
      && apt-get -y install --no-install-recommends git gcc g++ cmake\
-     libjsoncpp-dev uuid-dev zlib1g-dev libhiredis-dev libmariadb-dev\
+     libjsoncpp-dev uuid-dev zlib1g-dev libhiredis-dev \
      curl libyaml-cpp-dev && rm -rf /var/lib/apt/lists/*
 
 # Definir a versão do Docker Compose que você deseja instalar

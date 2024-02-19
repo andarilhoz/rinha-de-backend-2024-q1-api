@@ -1,0 +1,34 @@
+{
+    "rdbms": "postgresql",
+    "host": "127.0.0.1",
+    "port": 5432,
+    "dbname": "db",
+    "user": "user",
+    "passwd": "password",
+    "tables": [],
+    "relationships": {
+        "enabled": false,
+        "items": [
+            {
+                "type": "has one",
+                "original_table_name": "clientes",
+                "original_table_alias": "cliente",
+                "original_key": "id",
+                "target_table_name": "saldos",
+                "target_table_alias": "",
+                "target_key": "cliente_id",
+                "enable_reverse": true
+            },
+            {
+                "type": "has many",
+                "original_table_name": "clientes",
+                "original_table_alias": "cliente",
+                "original_key": "id",
+                "target_table_name": "transacoes",
+                "target_table_alias": "",
+                "target_key": "cliente_id",
+                "enable_reverse": true
+            }
+        ]
+    }
+  }

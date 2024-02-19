@@ -12,7 +12,8 @@
 		"vscode": {
 			"settings": {},
 			"extensions": [
-				"streetsidesoftware.code-spell-checker"
+				"ms-vscode.cpptools",
+				"ms-vscode.cmake-tools"
 			]
 		}
 	},
