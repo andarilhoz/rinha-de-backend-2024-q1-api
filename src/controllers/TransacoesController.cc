@@ -15,7 +15,7 @@ void TransacoesController::create(const HttpRequestPtr &req,
                                   TransacaoRequest &&transacao)
 {
 
-    LOG_INFO << "Iniciando a criação de transação para o cliente ID: " << id;
+    LOG_DEBUG << "Iniciando a criação de transação para o cliente ID: " << id;
     
     auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
     auto dbClientPtr = drogon::app().getDbClient();
@@ -25,7 +25,7 @@ void TransacoesController::create(const HttpRequestPtr &req,
 
     const auto transPtr = dbClientPtr->newTransaction();
 
-    if(transacao.tipo == "d"){
+    if(transacao.tipo == "c"){
         this->updateSaldo(id, transacao.valor, transPtr);
     }else{
         this->updateSaldo(id, transacao.valor * -1, transPtr);
@@ -47,10 +47,11 @@ void TransacoesController::create(const HttpRequestPtr &req,
             auto row = result[0];
             auto saldo = row["saldo"].as<int>();
             auto limite = row["limite"].as<int>();
-            if(transacao.tipo == "c" && saldo - transacao.valor < limite * -1){
-                LOG_ERROR << "Limite de crédito excedido";
+            if(transacao.tipo == "d" && saldo < limite * -1){
+                LOG_DEBUG << "Limite de crédito excedido, saldo: " << saldo << " limite: " << limite << " valor: " << transacao.valor;
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k422UnprocessableEntity);
+                resp->setBody("Limite de crédito excedido");
                 transPtr->rollback();
                 (*callbackPtr)(resp);
                 return;
@@ -62,7 +63,8 @@ void TransacoesController::create(const HttpRequestPtr &req,
             
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k200OK);
-            LOG_INFO << "Transação concluída com sucesso";
+            resp->setBody(respBody.toStyledString());
+            LOG_DEBUG << "Transação concluída com sucesso";
             (*callbackPtr)(resp);
         },
         [callbackPtr](const drogon::orm::DrogonDbException &e){
