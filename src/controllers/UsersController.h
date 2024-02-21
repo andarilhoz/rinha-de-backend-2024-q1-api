@@ -24,7 +24,7 @@ class UsersController: public drogon::HttpController<UsersController>
   public:
     METHOD_LIST_BEGIN
     // use METHOD_ADD to add your custom processing function here;
-    ADD_METHOD_TO(UsersController::getOne,"/clientes/{1}/transacoes",Get);
+    ADD_METHOD_TO(UsersController::getOne,"/clientes/{1}/extrato", Get);
     //ADD_METHOD_TO(UsersController::update,"transacoes",Put,Options);
     METHOD_LIST_END
 
