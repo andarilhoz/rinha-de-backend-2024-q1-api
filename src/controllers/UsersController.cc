@@ -20,28 +20,86 @@ void UsersController::getOne(const HttpRequestPtr &req,
         LOG_ERROR << "DB not initialized";
     }
     
+    const auto transPtr = dbClientPtr->newTransaction();
+
+    std::string saldosELimites = "SELECT c.limite, s.valor AS saldo FROM clientes c JOIN saldos s ON c.id = s.cliente_id WHERE c.id = $1";
+    transPtr->execSqlAsync(
+        saldosELimites,
+        [this, callbackPtr, transPtr, id](const drogon::orm::Result &result){
+            if(result.empty()){
+                LOG_ERROR << "Cliente ou saldo não encontrado";
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setBody("Cliente não encontrado");
+                resp->setStatusCode(k404NotFound);
+                (*callbackPtr)(resp);
+                return;
+            }
+            auto row = result[0];
+            auto saldo = row["saldo"].as<int>();
+            auto limite = row["limite"].as<int>();
+            
+            auto respBody = Json::Value();
+            respBody["saldo"] = {};
+            
+            respBody["saldo"]["total"] = saldo;
+            respBody["saldo"]["data_extrato"] = trantor::Date::now().toCustomedFormattedStringLocal("%Y-%m-%dT%H:%M:%S");
+            respBody["saldo"]["limite"] = limite;
+
+            this->getTransacoes(id, transPtr, 
+                [callbackPtr, respBody](const Json::Value &transacoes) mutable {
+                    respBody["ultimas_transacoes"] = transacoes;
+                    
+                    auto resp = HttpResponse::newHttpResponse();
+                    resp->setStatusCode(k200OK);
+                    resp->setBody(respBody.toStyledString());
+                    resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
+                    LOG_DEBUG << "Informações de cliente e transações enviadas com sucesso";
+                    (*callbackPtr)(resp);
+                },
+                [callbackPtr](const DrogonDbException &e){
+                    LOG_ERROR << "Erro ao buscar transações: " << e.base().what();
+                    auto resp = HttpResponse::newHttpResponse();
+                    resp->setStatusCode(k500InternalServerError);
+                    (*callbackPtr)(resp);
+                }
+            );
+        },
+        [callbackPtr](const drogon::orm::DrogonDbException &e){
+            LOG_ERROR << "Erro ao executar SQL: " << e.base().what();
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setStatusCode(HttpStatusCode::k500InternalServerError);
+            (*callbackPtr)(resp);
+        }, id);
+}
+
+void UsersController::getTransacoes(std::string id, const DbClientPtr &dbClientPtr,
+                                  std::function<void(const Json::Value &)> onSuccess,
+                                  std::function<void(const DrogonDbException &)> onError)
+{
     Mapper<Transacoes> mapper(dbClientPtr);
 
     auto criteria = Criteria(Transacoes::Cols::_cliente_id, CompareOperator::EQ, id);
-    mapper.findOne(criteria, 
-    [=](const Transacoes &transacao){
-        auto json = Json::Value();
-                    json["transacao"] = transacao.toJson();
-                    auto resp = HttpResponse::newHttpJsonResponse(json);
-                    (*callbackPtr)(resp);
+    mapper
+        .orderBy(Transacoes::Cols::_realizada_em, SortOrder::DESC)
+        .limit(10)
+        .findBy(criteria, 
+            [onSuccess](const vector<Transacoes> &transacoes){
+                auto json = Json::Value(Json::arrayValue);
+                
+                for(auto &transacao : transacoes){
+                    auto item = Json::Value();
+                    item["valor"] = transacao.getValueOfValor();
+                    item["tipo"] = transacao.getValueOfTipo();
+                    item["descricao"] = transacao.getValueOfDescricao();
+                    item["realizada_em"] = transacao.getValueOfRealizadaEm().toCustomedFormattedStringLocal("%Y-%m-%dT%H:%M:%S");
 
-    },[callbackPtr](const DrogonDbException &e){
-        const drogon::orm::UnexpectedRows *s = dynamic_cast<const drogon::orm::UnexpectedRows *>(&e.base());
-        if(s) {
-            auto resp = HttpResponse::newHttpResponse();
-            resp->setStatusCode(k404NotFound);
-            (*callbackPtr)(resp);
-            return;
-        }
-
-        LOG_ERROR << e.base().what();
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(HttpStatusCode::k500InternalServerError);
-                (*callbackPtr)(resp);
-    });
+                    json.append(item);
+                }
+                
+                onSuccess(json);
+            },[onError](const DrogonDbException &e){
+                LOG_ERROR << e.base().what();
+                onError(e);
+            }
+        );
 }

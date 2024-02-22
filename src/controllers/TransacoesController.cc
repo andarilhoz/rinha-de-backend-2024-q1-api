@@ -64,6 +64,7 @@ void TransacoesController::create(const HttpRequestPtr &req,
             auto resp = HttpResponse::newHttpResponse();
             resp->setStatusCode(k200OK);
             resp->setBody(respBody.toStyledString());
+            resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
             LOG_DEBUG << "Transação concluída com sucesso";
             (*callbackPtr)(resp);
         },

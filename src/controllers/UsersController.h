@@ -15,6 +15,7 @@
 using namespace drogon;
 using namespace drogon::orm;
 using namespace drogon_model::db;
+using namespace std;
 /**
  * @brief this class is created by the drogon_ctl command (drogon_ctl create controller -r UsersController --resource=transacoes).
  * this class is a restful API controller.
@@ -31,4 +32,8 @@ class UsersController: public drogon::HttpController<UsersController>
     void getOne(const HttpRequestPtr &req,
                 std::function<void(const HttpResponsePtr &)> &&callback,
                 std::string &&id);
+    
+    void getTransacoes(std::string id, const DbClientPtr &dbClientPtr,
+                       std::function<void(const Json::Value &)> onSuccess,
+                       std::function<void(const DrogonDbException &)> onError);
 };
