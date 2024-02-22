@@ -1,19 +1,20 @@
 #include <drogon/drogon.h>
 #include <iostream>
 
-int serverPort = 8080;
-
 int main() {
     //Set HTTP listener address and port
     //get port from env
-    const char *envServerPort = std::getenv("SERVER_PORT");
-    if (envServerPort != nullptr) {
-        serverPort = std::stoi(envServerPort);
-    }
+    const auto serverPort = std::stoi(getenv("SERVER_PORT"));
+    const auto databaseHost = getenv("DATABASE_HOST");
+    const auto databasePort = std::stoi(getenv("DATABASE_PORT"));
+    const auto databaseName = getenv("DATABASE_NAME");
+    const auto databaseUser = getenv("DATABASE_USER");
+    const auto databasePassword = getenv("DATABASE_PASSWORD");
 
     drogon::app().addListener("0.0.0.0", serverPort);
     LOG_INFO << "Initializing app on port: " << serverPort;
-    drogon::app().loadConfigFile("./config.json");
+
+    drogon::app().createDbClient("postgresql", databaseHost, databasePort, databaseName, databaseUser, databasePassword);
 
     auto &app = drogon::app();
     app.registerBeginningAdvice([]() {

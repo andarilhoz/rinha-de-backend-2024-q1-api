@@ -2,7 +2,7 @@
     "db_clients": [
         {
             "rdbms": "postgresql",
-            "host": "rinha_postgres",
+            "host": "localhost",
             "port": 5432,
             "dbname": "db",
             "user": "user",
