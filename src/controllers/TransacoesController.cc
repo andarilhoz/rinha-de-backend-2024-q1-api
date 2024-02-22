@@ -85,7 +85,8 @@ void TransacoesController::updateSaldo(int id, int valor, const DbClientPtr &dbC
 
     },
     [=](const drogon::orm::DrogonDbException &e){
-        LOG_ERROR << e.base().what();
+        
+        LOG_ERROR << "Erro ao atualizar saldo " << e.base().what();
 
     }, id, valor);
 }
@@ -108,7 +109,8 @@ void TransacoesController::addNewOperation(int id, TransacaoRequest transacao, c
 
         },
         [=](const DrogonDbException &e){
-            LOG_ERROR << e.base().what();
+
+            LOG_ERROR << "Error adicionando nova operacao: " << e.base().what();
         }
     );
 }

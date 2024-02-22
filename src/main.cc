@@ -10,6 +10,7 @@ int main() {
     const auto databaseName = getenv("DATABASE_NAME");
     const auto databaseUser = getenv("DATABASE_USER");
     const auto databasePassword = getenv("DATABASE_PASSWORD");
+    const auto logLevel = getenv("LOG_LEVEL");
 
     //print each env variable
     std::cout << "SERVER_PORT: " << serverPort << std::endl;
@@ -19,6 +20,14 @@ int main() {
     std::cout << "DATABASE_USER: " << databaseUser << std::endl;
     std::cout << "DATABASE_PASSWORD: " << databasePassword << std::endl;
     
+    if (logLevel == "debug") drogon::app().setLogLevel(trantor::Logger::kDebug);
+    else if (logLevel == "info") drogon::app().setLogLevel(trantor::Logger::kInfo);
+    else if (logLevel == "warn") drogon::app().setLogLevel(trantor::Logger::kWarn);
+    else if (logLevel == "error") drogon::app().setLogLevel(trantor::Logger::kError);
+    else if (logLevel == "fatal") drogon::app().setLogLevel(trantor::Logger::kFatal);
+    else drogon::app().setLogLevel(trantor::Logger::kInfo);
+
+    drogon::app().setLogLevel(trantor::Logger::kInfo);
 
     drogon::app().addListener("0.0.0.0", serverPort);
     LOG_INFO << "Initializing app on port: " << serverPort;
