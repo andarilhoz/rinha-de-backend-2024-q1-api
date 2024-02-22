@@ -20,56 +20,59 @@ void UsersController::getOne(const HttpRequestPtr &req,
         LOG_ERROR << "DB not initialized";
     }
     
-    const auto transPtr = dbClientPtr->newTransaction();
-
-    std::string saldosELimites = "SELECT c.limite, s.valor AS saldo FROM clientes c JOIN saldos s ON c.id = s.cliente_id WHERE c.id = $1";
-    transPtr->execSqlAsync(
-        saldosELimites,
-        [this, callbackPtr, transPtr, id](const drogon::orm::Result &result){
-            if(result.empty()){
-                LOG_ERROR << "Cliente ou saldo não encontrado";
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setBody("Cliente não encontrado");
-                resp->setStatusCode(k404NotFound);
-                (*callbackPtr)(resp);
-                return;
-            }
-            auto row = result[0];
-            auto saldo = row["saldo"].as<int>();
-            auto limite = row["limite"].as<int>();
-            
-            auto respBody = Json::Value();
-            respBody["saldo"] = {};
-            
-            respBody["saldo"]["total"] = saldo;
-            respBody["saldo"]["data_extrato"] = trantor::Date::now().toCustomedFormattedStringLocal("%Y-%m-%dT%H:%M:%S");
-            respBody["saldo"]["limite"] = limite;
-
-            this->getTransacoes(id, transPtr, 
-                [callbackPtr, respBody](const Json::Value &transacoes) mutable {
-                    respBody["ultimas_transacoes"] = transacoes;
-                    
+    dbClientPtr->newTransactionAsync([callbackPtr, this, id](const std::shared_ptr<Transaction> &transPtr){
+        LOG_DEBUG << "Transação iniciada";
+        std::string saldosELimites = "SELECT c.limite, s.valor AS saldo FROM clientes c JOIN saldos s ON c.id = s.cliente_id WHERE c.id = $1";
+        transPtr->execSqlAsync(
+            saldosELimites,
+            [this, callbackPtr, transPtr, id](const drogon::orm::Result &result){
+                if(result.empty()){
+                    LOG_ERROR << "Cliente ou saldo não encontrado";
                     auto resp = HttpResponse::newHttpResponse();
-                    resp->setStatusCode(k200OK);
-                    resp->setBody(respBody.toStyledString());
-                    resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
-                    LOG_DEBUG << "Informações de cliente e transações enviadas com sucesso";
+                    resp->setBody("Cliente não encontrado");
+                    resp->setStatusCode(k404NotFound);
                     (*callbackPtr)(resp);
-                },
-                [callbackPtr](const DrogonDbException &e){
-                    LOG_ERROR << "Erro ao buscar transações: " << e.base().what();
-                    auto resp = HttpResponse::newHttpResponse();
-                    resp->setStatusCode(k500InternalServerError);
-                    (*callbackPtr)(resp);
+                    return;
                 }
-            );
-        },
-        [callbackPtr](const drogon::orm::DrogonDbException &e){
-            LOG_ERROR << "Erro ao executar SQL: " << e.base().what();
-            auto resp = HttpResponse::newHttpResponse();
-            resp->setStatusCode(HttpStatusCode::k500InternalServerError);
-            (*callbackPtr)(resp);
-        }, id);
+                auto row = result[0];
+                auto saldo = row["saldo"].as<int>();
+                auto limite = row["limite"].as<int>();
+                
+                auto respBody = Json::Value();
+                respBody["saldo"] = {};
+                
+                respBody["saldo"]["total"] = saldo;
+                respBody["saldo"]["data_extrato"] = trantor::Date::now().toCustomedFormattedStringLocal("%Y-%m-%dT%H:%M:%S");
+                respBody["saldo"]["limite"] = limite;
+
+                this->getTransacoes(id, transPtr, 
+                    [callbackPtr, respBody](const Json::Value &transacoes) mutable {
+                        respBody["ultimas_transacoes"] = transacoes;
+                        
+                        auto resp = HttpResponse::newHttpResponse();
+                        resp->setStatusCode(k200OK);
+                        resp->setBody(respBody.toStyledString());
+                        resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
+                        LOG_DEBUG << "Informações de cliente e transações enviadas com sucesso";
+                        (*callbackPtr)(resp);
+                    },
+                    [callbackPtr](const DrogonDbException &e){
+                        LOG_ERROR << "Erro ao buscar transações: " << e.base().what();
+                        auto resp = HttpResponse::newHttpResponse();
+                        resp->setStatusCode(k500InternalServerError);
+                        (*callbackPtr)(resp);
+                    }
+                );
+            },
+            [callbackPtr](const drogon::orm::DrogonDbException &e){
+                LOG_ERROR << "Erro ao executar SQL: " << e.base().what();
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(HttpStatusCode::k500InternalServerError);
+                (*callbackPtr)(resp);
+            }, id);
+    });
+
+    
 }
 
 void UsersController::getTransacoes(std::string id, const DbClientPtr &dbClientPtr,
