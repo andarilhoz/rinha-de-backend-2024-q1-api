@@ -33,6 +33,8 @@ void TransacoesController::create(const HttpRequestPtr &req,
 
         this->addNewOperation(id, transacao, transPtr);
 
+        this->checkIfUserExists(id, transPtr, callbackPtr);
+
         std::string saldosELimites = "SELECT c.limite, s.valor AS saldo FROM clientes c JOIN saldos s ON c.id = s.cliente_id WHERE c.id = $1";
         transPtr->execSqlAsync(
             saldosELimites,
@@ -115,3 +117,22 @@ void TransacoesController::addNewOperation(int id, TransacaoRequest transacao, c
     );
 }
 
+void TransacoesController::checkIfUserExists(int id, const DbClientPtr &dbClient, std::shared_ptr<drogon::AdviceCallback> callbackPtr) {
+    Mapper<Clientes> clientMapper(dbClient);
+    Clientes::PrimaryKeyType client_id = id;
+    clientMapper.findByPrimaryKey(
+        client_id,
+        [=](const Clientes &client) {
+            return;
+        }, 
+        [callbackPtr](const DrogonDbException &e){
+            LOG_ERROR << "Erro ao buscar cliente: " << e.base().what();
+            auto res = HttpResponse::newHttpResponse();
+            res->setStatusCode(k404NotFound);
+            res->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
+            res->setBody("{\"erro\": \"Cliente não encontrado\"}");
+            (*callbackPtr)(res);
+            return;
+        }
+    );
+}

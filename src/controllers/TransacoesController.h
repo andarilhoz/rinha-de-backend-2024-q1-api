@@ -17,7 +17,6 @@
 #include "models/request/TransacaoRequest.h"
 
 #include "filters/TransacoesValidator.h"
-#include "filters/CheckIfUserExists.h"
 
 using namespace drogon;
 using namespace drogon::orm;
@@ -31,7 +30,7 @@ class TransacoesController: public drogon::HttpController<TransacoesController>
   public:
     METHOD_LIST_BEGIN
     // use METHOD_ADD to add your custom processing function here;
-    ADD_METHOD_TO(TransacoesController::create,"clientes/{id}/transacoes", Post, "TransacoesValidator", "CheckIfUserExists");
+    ADD_METHOD_TO(TransacoesController::create,"clientes/{id}/transacoes", Post, "TransacoesValidator");
     //ADD_METHOD_TO(TransacoesController::update,"transacoes",Put,Options);
     METHOD_LIST_END
 
@@ -45,4 +44,7 @@ class TransacoesController: public drogon::HttpController<TransacoesController>
 
     void addNewOperation(int id, TransacaoRequest transacao, 
                          const DbClientPtr &dbClientPtr);
+    
+    void checkIfUserExists(int id, const DbClientPtr &dbClientPtr, 
+                           std::shared_ptr<drogon::AdviceCallback> callback);
 };
