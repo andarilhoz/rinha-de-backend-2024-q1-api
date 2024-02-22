@@ -18,7 +18,7 @@ void TransacoesController::create(const HttpRequestPtr &req,
     LOG_DEBUG << "Iniciando a criação de transação para o cliente ID: " << id;
     
     auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
-    auto dbClientPtr = drogon::app().getDbClient();
+    auto dbClientPtr = drogon::app().getFastDbClient();
     if(!dbClientPtr){
         LOG_ERROR << "DB not initialized";
     }

@@ -2,15 +2,20 @@
     "db_clients": [
         {
             "rdbms": "postgresql",
-            "host": "127.0.0.1",
+            "host": "rinha_postgres",
             "port": 5432,
             "dbname": "db",
             "user": "user",
             "passwd": "password",
-            "is_fast": false,
-            "number_of_connections": 1,
+            "is_fast": true,
+            "number_of_connections": 5,
             "timeout": -1.0,
             "auto_batch": false
         }
-    ]
+    ],
+    "app":{
+        "log": {
+            "log_level": "WARN"
+        }
+    }
 }
