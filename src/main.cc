@@ -11,10 +11,21 @@ int main() {
     const auto databaseUser = getenv("DATABASE_USER");
     const auto databasePassword = getenv("DATABASE_PASSWORD");
 
+    //print each env variable
+    std::cout << "SERVER_PORT: " << serverPort << std::endl;
+    std::cout << "DATABASE_HOST: " << databaseHost << std::endl;
+    std::cout << "DATABASE_PORT: " << databasePort << std::endl;
+    std::cout << "DATABASE_NAME: " << databaseName << std::endl;
+    std::cout << "DATABASE_USER: " << databaseUser << std::endl;
+    std::cout << "DATABASE_PASSWORD: " << databasePassword << std::endl;
+    
+
     drogon::app().addListener("0.0.0.0", serverPort);
     LOG_INFO << "Initializing app on port: " << serverPort;
+    
+    drogon::app().createDbClient("postgresql", databaseHost, databasePort, databaseName, databaseUser, databasePassword, 1,"","default",true);
 
-    drogon::app().createDbClient("postgresql", databaseHost, databasePort, databaseName, databaseUser, databasePassword);
+    LOG_INFO << "Database connection created";
 
     auto &app = drogon::app();
     app.registerBeginningAdvice([]() {
@@ -29,9 +40,7 @@ int main() {
                 << std::endl;
     });
 
-
-    
-        
+    LOG_INFO << "Starting app";
     drogon::app().run();
 
     return 0;
