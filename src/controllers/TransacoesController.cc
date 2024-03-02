@@ -7,7 +7,9 @@
 
 #include "TransacoesController.h"
 #include <string>
+#include <unordered_map>
 
+static std::unordered_map<int, bool> clientsCache;
 
 void TransacoesController::create(const HttpRequestPtr &req,
                                   std::function<void(const HttpResponsePtr &)> &&callback,
@@ -24,6 +26,14 @@ void TransacoesController::create(const HttpRequestPtr &req,
     }
 
     dbClientPtr->newTransactionAsync([transacao, id, this, callbackPtr](const std::shared_ptr<Transaction> &transPtr){
+        
+        if (clientsCache.count(id) <= 0) {
+            LOG_INFO << "Cliente " << id << " não encontrado no cache";
+            this->checkIfUserExists(id, transPtr, callbackPtr);
+        }else{
+            LOG_INFO << "Cliente " << id << " encontrado no cache";
+        }
+        
         LOG_DEBUG << "Transação iniciada";
         if(transacao.tipo == "c"){
             this->updateSaldo(id, transacao.valor, transPtr);
@@ -32,8 +42,6 @@ void TransacoesController::create(const HttpRequestPtr &req,
         }
 
         this->addNewOperation(id, transacao, transPtr);
-
-        this->checkIfUserExists(id, transPtr, callbackPtr);
 
         std::string saldosELimites = "SELECT c.limite, s.valor AS saldo FROM clientes c JOIN saldos s ON c.id = s.cliente_id WHERE c.id = $1";
         transPtr->execSqlAsync(
@@ -122,7 +130,9 @@ void TransacoesController::checkIfUserExists(int id, const DbClientPtr &dbClient
     Clientes::PrimaryKeyType client_id = id;
     clientMapper.findByPrimaryKey(
         client_id,
-        [=](const Clientes &client) {
+        [id](const Clientes &client) {
+            clientsCache[id] = true;
+            LOG_INFO << "Cliente " << id << " encontrado";
             return;
         }, 
         [callbackPtr](const DrogonDbException &e){

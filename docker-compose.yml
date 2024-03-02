@@ -9,14 +9,22 @@ services:
     volumes:
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
     environment:
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_USER=user
-      - POSTGRES_DB=db
+      POSTGRES_DB: db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      PG_MAX_WAL_SIZE: '2GB'        # Increases the maximum size of WAL files before triggering a checkpoint
+      PG_MIN_WAL_SIZE: '1GB'        # Sets the minimum size of WAL files
+      PG_CHECKPOINT_TIMEOUT: '10min' # Increases the time between automatic WAL checkpoints
+      PG_WORK_MEM: '64MB'           # Sets the amount of memory used for query operations like sorts and hashes
+      PG_MAINTENANCE_WORK_MEM: '128MB' # Sets the maximum amount of memory for maintenance operations, such as vacuuming
+      PG_EFFECTIVE_CACHE_SIZE: '2GB' # Advises the planner on how much memory is available for caching data
+      PG_SHARED_BUFFERS: '512MB'    # Sets the amount of memory the database server uses for shared memory buffers
+      PG_MAX_CONNECTIONS: '40'     # Adjusts the maximum number of concurrent connections
     deploy:
       resources:
         limits:
           cpus: '0.25'
-          memory: "200MB"
+          memory: "256MB"
 
   rinha_api_01: &rinha_api_01
     image: andarilhoz/rinha-de-backend-2024-q1-api:latest
@@ -26,6 +34,7 @@ services:
       DATABASE_USER: user
       DATABASE_PORT: 5432
       DATABASE_PASSWORD: password
+      LOG_LEVEL: debug
       SERVER_PORT: 8080
     depends_on:
       - postgres
