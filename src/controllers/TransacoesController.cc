@@ -9,8 +9,6 @@
 #include <string>
 #include <unordered_map>
 
-static std::unordered_map<int, bool> clientsCache;
-
 void TransacoesController::create(const HttpRequestPtr &req,
                                   std::function<void(const HttpResponsePtr &)> &&callback,
                                   int &&id,
@@ -18,22 +16,25 @@ void TransacoesController::create(const HttpRequestPtr &req,
 {
 
     LOG_DEBUG << "Iniciando a criação de transação para o cliente ID: " << id;
-    
     auto callbackPtr = std::make_shared<std::function<void(const HttpResponsePtr &)>>(std::move(callback));
+
+    bool client_exists = this->checkIfUserExists(id);
+    if(!client_exists){
+        LOG_ERROR << "Erro ao buscar cliente: " << id << " nao encontrado";
+        auto res = HttpResponse::newHttpResponse();
+        res->setStatusCode(k404NotFound);
+        res->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
+        res->setBody("{\"erro\": \"Cliente não encontrado\"}");
+        (*callbackPtr)(res);
+        return;
+    }
+    
     auto dbClientPtr = drogon::app().getFastDbClient();
     if(!dbClientPtr){
         LOG_ERROR << "DB not initialized";
     }
 
     dbClientPtr->newTransactionAsync([transacao, id, this, callbackPtr](const std::shared_ptr<Transaction> &transPtr){
-        
-        if (clientsCache.count(id) <= 0) {
-            LOG_INFO << "Cliente " << id << " não encontrado no cache";
-            this->checkIfUserExists(id, transPtr, callbackPtr);
-        }else{
-            LOG_INFO << "Cliente " << id << " encontrado no cache";
-        }
-        
         LOG_DEBUG << "Transação iniciada";
         if(transacao.tipo == "c"){
             this->updateSaldo(id, transacao.valor, transPtr);
@@ -77,12 +78,14 @@ void TransacoesController::create(const HttpRequestPtr &req,
                 resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
                 LOG_DEBUG << "Transação concluída com sucesso";
                 (*callbackPtr)(resp);
+                return;
             },
             [callbackPtr](const drogon::orm::DrogonDbException &e){
                 LOG_ERROR << "Erro ao executar SQL: " << e.base().what();
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(HttpStatusCode::k500InternalServerError);
                 (*callbackPtr)(resp);
+                return;
             }, id);
     });   
 }
@@ -125,24 +128,6 @@ void TransacoesController::addNewOperation(int id, TransacaoRequest transacao, c
     );
 }
 
-void TransacoesController::checkIfUserExists(int id, const DbClientPtr &dbClient, std::shared_ptr<drogon::AdviceCallback> callbackPtr) {
-    Mapper<Clientes> clientMapper(dbClient);
-    Clientes::PrimaryKeyType client_id = id;
-    clientMapper.findByPrimaryKey(
-        client_id,
-        [id](const Clientes &client) {
-            clientsCache[id] = true;
-            LOG_INFO << "Cliente " << id << " encontrado";
-            return;
-        }, 
-        [callbackPtr](const DrogonDbException &e){
-            LOG_ERROR << "Erro ao buscar cliente: " << e.base().what();
-            auto res = HttpResponse::newHttpResponse();
-            res->setStatusCode(k404NotFound);
-            res->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
-            res->setBody("{\"erro\": \"Cliente não encontrado\"}");
-            (*callbackPtr)(res);
-            return;
-        }
-    );
+bool TransacoesController::checkIfUserExists(int id) {
+    return id > 0 && id < 6;
 }

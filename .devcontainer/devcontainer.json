@@ -23,11 +23,9 @@
 	"features": {
 		//"ghcr.io/devcontainers/features/desktop-lite:1": {}
 		"ghcr.io/devcontainers/features/docker-in-docker:2": {
-			"moby": true,
-			"azureDnsAutoDetection": true,
-			"installDockerBuildx": true,
+			"moby": false,
 			"version": "latest",
-			"dockerDashComposeVersion": "none"
+			"dockerDashComposeVersion": "latest"
 		}
 	},
 	

@@ -23,8 +23,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: "256MB"
+          cpus: '0.5'
+          memory: "200MB"
 
   rinha_api_01: &rinha_api_01
     image: andarilhoz/rinha-de-backend-2024-q1-api:latest
@@ -41,8 +41,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: "25MB"
+          cpus: '0.4'
+          memory: "75MB"
   
   rinha_api_02:
     <<: *rinha_api_01
@@ -66,5 +66,5 @@ services:
       deploy:
         resources:
           limits:
-            cpus: "0.15"
-            memory: "50MB"
+            cpus: "0.2"
+            memory: "200MB"

@@ -45,6 +45,5 @@ class TransacoesController: public drogon::HttpController<TransacoesController>
     void addNewOperation(int id, TransacaoRequest transacao, 
                          const DbClientPtr &dbClientPtr);
     
-    void checkIfUserExists(int id, const DbClientPtr &dbClientPtr, 
-                           std::shared_ptr<drogon::AdviceCallback> callback);
+    bool checkIfUserExists(int id);
 };
