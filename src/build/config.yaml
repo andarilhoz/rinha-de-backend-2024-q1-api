@@ -1,7 +1,0 @@
-app:
-  db_clients:
-    rdbms:  postgresql
-    port: 5432
-    dbname: db
-    user: 'user'
-    passwd: 'password'
